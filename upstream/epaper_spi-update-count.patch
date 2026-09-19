@@ -1,0 +1,49 @@
+--- a/esphome/components/epaper_spi/epaper_spi.cpp
++++ b/esphome/components/epaper_spi/epaper_spi.cpp
+@@ -1,5 +1,8 @@
+ #include "epaper_spi.h"
+ #include <cinttypes>
++#ifdef USE_ESP32
++#include <esp_system.h>
++#endif
+ #include "esphome/core/application.h"
+ #include "esphome/core/helpers.h"
+ #include "esphome/core/log.h"
+@@ -27,6 +30,13 @@
+   }
+   this->setup_pins_();
+   this->spi_setup();
++#ifdef USE_ESP32
++  // A deep-sleep wake leaves the panel's previous-image RAM intact, so the
++  // first refresh of this boot can be a partial one; any other reset reason
++  // means the baseline is not trustworthy and a full refresh must come first.
++  this->update_count_ = esp_reset_reason() == ESP_RST_DEEPSLEEP ? 1 : 0;
++  ESP_LOGD(TAG, "Reset reason %d, seeded update_count %u", (int) esp_reset_reason(), this->update_count_);
++#endif
+ }
+ 
+ bool EPaperBase::init_buffer_(size_t buffer_length) {
+--- a/esphome/components/epaper_spi/epaper_spi.h
++++ b/esphome/components/epaper_spi/epaper_spi.h
+@@ -61,6 +61,8 @@
+     this->update_effective_transform_();
+   }
+   void set_full_update_every(uint8_t full_update_every) { this->full_update_every_ = full_update_every; }
++  // Seed the update counter so the first refresh of a boot can be a partial one.
++  void set_update_count(uint8_t count) { this->update_count_ = count; }
+   void dump_config() override;
+ 
+   void command(uint8_t value);
+--- a/esphome/components/epaper_spi/epaper_spi_uc8179.cpp
++++ b/esphome/components/epaper_spi/epaper_spi_uc8179.cpp
+@@ -24,8 +24,10 @@
+ // Set up the refresh mode. Must be called after power-on has completed.
+ void EPaperUC8179::set_refresh_mode_() {
+   if (!this->is_using_partial_update_()) {
++    ESP_LOGD(TAG, "Refresh mode: full");
+     return;  // plain full refresh uses the mode set by the init sequence
+   }
++  ESP_LOGD(TAG, "Refresh mode: %s", this->partial_ ? "partial" : "fast full");
+   // Fast and partial refresh use flipped data polarity and a floating border
+   this->cmd_data(0x50, {0xA9, 0x07});
+   // Force the waveform via the temperature registers: 0x5A selects the fast

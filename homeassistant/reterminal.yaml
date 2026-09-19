@@ -1,0 +1,217 @@
+# Home Assistant side of the reTerminal E1001 weather display, as a package.
+# Enable packages in configuration.yaml:
+#
+#   homeassistant:
+#     packages: !include_dir_named packages
+#
+# then drop this file into packages/ and replace the entity IDs marked CHANGE.
+# See SETUP.md for the full walk-through.
+#
+# Everything reaches the display as retained MQTT messages, so a waking device
+# gets the latest values the moment it subscribes instead of waiting on the
+# ESPHome API reconnect.
+
+# -----------------------------------------------------------------------------
+# Source entities
+#
+# The automations below publish from four aggregate entities. The setup they
+# mirror uses mean-type sensor groups, so a floor/area reading stays valid even
+# when a single room sensor drops out. If you have a plain sensor instead, put
+# its entity_id in the automation and delete the groups you don't need.
+# -----------------------------------------------------------------------------
+sensor:
+  # Outdoor temperature averaged over all outdoor sensors (including the
+  # weather provider, so the display matches the forecast it shows).
+  - platform: group
+    name: Outdoor Temperature
+    unique_id: reterminal_outdoor_temperature
+    type: mean
+    ignore_non_numeric: true
+    entities:
+      - sensor.openweathermap_temperature           # CHANGE
+      - sensor.heat_pump_outdoor_temperature        # CHANGE
+  # Same idea for humidity.
+  - platform: group
+    name: Outdoor Humidity
+    unique_id: reterminal_outdoor_humidity
+    type: mean
+    ignore_non_numeric: true
+    entities:
+      - sensor.openweathermap_humidity              # CHANGE
+      - sensor.bathroom_climate_sensor_humidity     # CHANGE
+  # Indoor temperatures, one group per floor / zone. The display shows their
+  # average. Optional: add the display's own room sensor
+  # (sensor.reterminal_room_temperature, appears via MQTT discovery after the
+  # first sync) to one of the groups, so the room the display hangs in
+  # contributes to its own indoor reading.
+  - platform: group
+    name: House Upper Floor
+    unique_id: reterminal_house_upper_floor
+    type: mean
+    ignore_non_numeric: true
+    entities:
+      - sensor.bedroom_climate_sensor_temperature   # CHANGE
+      - sensor.office_climate_sensor_temperature    # CHANGE
+  - platform: group
+    name: House Lower Floor
+    unique_id: reterminal_house_lower_floor
+    type: mean
+    ignore_non_numeric: true
+    entities:
+      - sensor.kitchen_climate_sensor_temperature   # CHANGE
+      - sensor.living_room_climate_sensor_temperature  # CHANGE
+      # - sensor.reterminal_room_temperature
+
+template:
+  # One sensor carrying two compact JSON payloads. The display parses them on
+  # the device, so it can't paint a half-populated screen the way ~90 separate
+  # attribute subscriptions did.
+  - trigger:
+      - trigger: time_pattern
+        hours: /1
+      - trigger: homeassistant
+        event: start
+    action:
+      - action: weather.get_forecasts
+        data:
+          type: daily
+        target:
+          entity_id: weather.openweathermap  # CHANGE
+        response_variable: daily_data
+      - action: weather.get_forecasts
+        data:
+          type: hourly
+        target:
+          entity_id: weather.openweathermap  # CHANGE
+        response_variable: hourly_data
+    sensor:
+      - name: "ReTerminal Forecast"
+        unique_id: reterminal_forecast
+        # Short, always-changing state: keeps it under the 255 char state limit
+        # and guarantees a state change event on every recompute.
+        state: "{{ now().isoformat(timespec='seconds') }}"
+        attributes:
+          daily: >-
+            {%- set ns = namespace(out=[]) -%}
+            {%- for d in (daily_data.values() | first).forecast[:5] -%}
+              {%- set ns.out = ns.out + [{
+                'd': as_timestamp(d.datetime) | timestamp_custom('%a', True),
+                'c': d.condition,
+                'h': d.temperature | float(0) | round(0) | int,
+                'l': d.templow | float(0) | round(0) | int }] -%}
+            {%- endfor -%}
+            {{ ns.out | tojson }}
+          hourly: >-
+            {#- Some providers still list the hour that has already elapsed, so
+                drop anything before the current hour. replace() rather than
+                epoch modulo, so it stays correct in half-hour timezones. -#}
+            {%- set hour_start = as_timestamp(now().replace(minute=0, second=0, microsecond=0)) -%}
+            {%- set ns = namespace(out=[]) -%}
+            {%- for h in (hourly_data.values() | first).forecast -%}
+              {%- if ns.out | count < 12 and as_timestamp(h.datetime) >= hour_start -%}
+                {%- set ns.out = ns.out + [{
+                  't': as_timestamp(h.datetime) | timestamp_custom('%H:%M', True),
+                  'c': h.condition,
+                  'p': h.temperature | float(0) | round(0) | int,
+                  'r': h.precipitation_probability | float(0) | round(0) | int,
+                  'w': h.wind_speed | float(0) | round(0) | int }] -%}
+              {%- endif -%}
+            {%- endfor -%}
+            {{ ns.out | tojson }}
+        availability: "{{ states('weather.openweathermap') not in ['unknown', 'unavailable', 'none'] }}"  # CHANGE
+
+# Turn on to keep the display awake after its next sync wake, e.g. to flash it
+input_boolean:
+  reterminal_prevent_sleep:
+    name: ReTerminal Prevent Sleep
+    icon: mdi:sleep-off
+
+automation:
+  - id: reterminal_publish_mqtt_state
+    alias: "reTerminal E1001 - Publish State to MQTT"
+    description: >-
+      Publishes outdoor/indoor temperatures, the forecast JSON and the date to
+      retained MQTT topics every minute; the display picks them up on its next
+      sync wake.
+    triggers:
+      - trigger: time_pattern
+        minutes: "/1"
+    actions:
+      - if:
+          - condition: template
+            value_template: "{{ is_number(states('sensor.outdoor_temperature')) }}"  # CHANGE
+        then:
+          - action: mqtt.publish
+            data:
+              topic: home/reterminal/outdoor_temperature
+              payload: "{{ states('sensor.outdoor_temperature') }}"  # CHANGE
+              retain: true
+      - if:
+          - condition: template
+            value_template: "{{ is_number(states('sensor.outdoor_humidity')) }}"  # CHANGE
+        then:
+          - action: mqtt.publish
+            data:
+              topic: home/reterminal/outdoor_humidity
+              payload: "{{ states('sensor.outdoor_humidity') }}"  # CHANGE
+              retain: true
+      # The display shows the average of these two; publish the same sensor
+      # to both topics if there is only one indoor reading
+      - if:
+          - condition: template
+            value_template: "{{ is_number(states('sensor.house_upper_floor')) }}"  # CHANGE
+        then:
+          - action: mqtt.publish
+            data:
+              topic: home/reterminal/indoor_upper
+              payload: "{{ states('sensor.house_upper_floor') }}"  # CHANGE
+              retain: true
+      - if:
+          - condition: template
+            value_template: "{{ is_number(states('sensor.house_lower_floor')) }}"  # CHANGE
+        then:
+          - action: mqtt.publish
+            data:
+              topic: home/reterminal/indoor_lower
+              payload: "{{ states('sensor.house_lower_floor') }}"  # CHANGE
+              retain: true
+      - if:
+          - condition: template
+            value_template: "{{ states('sensor.reterminal_forecast') not in ['unknown', 'unavailable', 'none'] }}"
+        then:
+          - action: mqtt.publish
+            data:
+              topic: home/reterminal/daily_forecast
+              payload: "{{ state_attr('sensor.reterminal_forecast', 'daily') }}"
+              retain: true
+          - action: mqtt.publish
+            data:
+              topic: home/reterminal/hourly_forecast
+              payload: "{{ state_attr('sensor.reterminal_forecast', 'hourly') }}"
+              retain: true
+      - action: mqtt.publish
+        data:
+          topic: home/reterminal/date
+          payload: "{{ now().strftime('%A, %B %-d') }}"
+          retain: true
+      - action: mqtt.publish
+        data:
+          topic: home/reterminal/last_update
+          payload: "{{ now().strftime('%H:%M') }}"
+          retain: true
+    mode: single
+
+  - id: reterminal_publish_prevent_sleep
+    alias: "reTerminal E1001 - Publish Prevent Sleep to MQTT"
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.reterminal_prevent_sleep
+      - trigger: homeassistant
+        event: start
+    actions:
+      - action: mqtt.publish
+        data:
+          topic: home/reterminal/prevent_sleep
+          payload: "{{ states('input_boolean.reterminal_prevent_sleep') }}"
+          retain: true
+    mode: single
