@@ -1,4 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/fabianwimberger/reterminal-e1001-weather/actions/workflows/ci.yml/badge.svg)](https://github.com/fabianwimberger/reterminal-e1001-weather/actions/workflows/ci.yml)
 
 # reTerminal E1001 Weather Display
 
