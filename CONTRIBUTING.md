@@ -1,0 +1,25 @@
+# Contributing
+
+## Quick start
+
+- **Bugs:** Open an issue using the bug-report template.
+- **Features:** Open an issue using the feature-request template.
+- **PRs:** Fork, branch from `develop`, keep the change focused, open against `develop`.
+
+```bash
+python -m venv .venv
+.venv/bin/pip install esphome
+cp secrets.yaml.example secrets.yaml
+.venv/bin/esphome config reterminal-e1001.yaml
+.venv/bin/esphome compile reterminal-e1001.yaml
+```
+
+## Conventions
+
+- Prefix commits semantically (`feat:`, `fix:`, `docs:`, `ci:`, `deps:`).
+- One logical change per PR.
+- Make sure CI is green before requesting review.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the project's MIT license.

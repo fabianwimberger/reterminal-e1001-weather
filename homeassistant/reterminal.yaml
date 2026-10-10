@@ -5,7 +5,7 @@
 #     packages: !include_dir_named packages
 #
 # then drop this file into packages/ and replace the entity IDs marked CHANGE.
-# See SETUP.md for the full walk-through.
+# See docs/SETUP.md for the full walk-through.
 #
 # Everything reaches the display as retained MQTT messages, so a waking device
 # gets the latest values the moment it subscribes instead of waiting on the
