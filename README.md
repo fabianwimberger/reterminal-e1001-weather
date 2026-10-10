@@ -1,5 +1,5 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/fabianwimberger/reterminal-e1001-weather/actions/workflows/ci.yml/badge.svg)](https://github.com/fabianwimberger/reterminal-e1001-weather/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 # reTerminal E1001 Weather Display
 
@@ -41,7 +41,7 @@ cp homeassistant/reterminal.yaml /config/packages/reterminal.yaml
 # replace every line marked "# CHANGE" with your entity IDs, then restart Home Assistant
 ```
 
-This needs an MQTT broker (Home Assistant + the display both connect to it) and a weather entity with daily + hourly forecasts. The exact tested setup — Mosquitto with per-user ACLs, mean-group source entities, and every step in between — is written out in the [Setup Guide](SETUP.md).
+This needs an MQTT broker (Home Assistant + the display both connect to it) and a weather entity with daily + hourly forecasts. The exact tested setup — Mosquitto with per-user ACLs, mean-group source entities, and every step in between — is written out in the [Setup Guide](docs/SETUP.md).
 
 Later updates go over the air. The device is only online for a few seconds on its 10-minute sync wake; either start the upload shortly before it wakes (the OTA start blocks deep sleep) or turn on `input_boolean.reterminal_prevent_sleep` first.
 

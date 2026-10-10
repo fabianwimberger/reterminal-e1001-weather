@@ -6,7 +6,7 @@ Assistant publishing every value the screen shows as retained MQTT messages,
 and a mean-group-based entity setup that keeps working when individual room
 sensors drop out.
 
-The [README](README.md) covers what the device does and why; this guide is the
+The [README](../README.md) covers what the device does and why; this guide is the
 step-by-step. Everything here lives on the Home Assistant side — the device
 firmware is flashed last, in step 6.
 
