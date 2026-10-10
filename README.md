@@ -1,7 +1,7 @@
+# reTerminal E1001 Weather Display
+
 [![CI](https://github.com/fabianwimberger/reterminal-e1001-weather/actions/workflows/ci.yml/badge.svg)](https://github.com/fabianwimberger/reterminal-e1001-weather/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-# reTerminal E1001 Weather Display
 
 ![reTerminal E1001 running the weather display](docs/display.jpg)
 
