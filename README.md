@@ -87,7 +87,8 @@ Timings live in the config: `wake_count % 10` (sync interval), `% 60` / `% 360` 
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). MIT applies to everything except
+`external_components/epaper_spi`, which is GPLv3 from ESPHome, modified.
 
 ### Third-Party Licenses
 
