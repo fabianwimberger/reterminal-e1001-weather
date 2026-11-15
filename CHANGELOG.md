@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Adds full firmware compilation coverage for the reTerminal E1001 weather display configuration.
 
-### Testing
+### CI
 
 - Compile the ESP32-S3 firmware, including the patched e-paper driver, on pull requests and pushes to main and develop.
 - Retain configuration validation as a separate check.
@@ -33,7 +33,7 @@ Initial public release of the battery-powered reTerminal E1001 weather display: 
 - Diagnostics: room temperature/humidity (SHT40), battery, Wi-Fi signal and wake duration published to MQTT.
 - Home Assistant package with sensor-group source entities, plus a step-by-step setup guide mirroring the tested broker/ACL configuration.
 
-### Testing
+### Validation
 
 - `esphome config` validated locally against ESPHome 2026.9.0 and enforced by CI on every push.
 - Running on hardware: partial refresh across deep-sleep wakes, hourly fast full and 6-hourly ghost-clearing full refresh verified over multi-day operation.
