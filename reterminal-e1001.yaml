@@ -65,7 +65,9 @@ logger:
   # ESP32-S3 defaults to USB_SERIAL_JTAG, which collides with the I2C pins
   # (GPIO19/20) and never reaches the CH340; this board logs over UART0.
   hardware_uart: UART0
-  level: ERROR
+  # Match ESPHome's boot log threshold while keeping runtime output at ERROR.
+  level: WARN
+  initial_level: ERROR
 
 json:
 
