@@ -61,7 +61,7 @@ refresh tier:  every 6 h  full (panel deep-sleeps, clears ghosting)
 
 Partial refresh compares against the panel controller's previous-image RAM. The panel is kept out of its own deep sleep between wakes so that RAM survives; the 6-hourly full refresh deep-sleeps it, and the wake after that starts over with a fast full refresh.
 
-This needs a small patch to ESPHome's `epaper_spi` component (seeding the update counter from the reset reason, plus `set_update_count()`), vendored in `external_components/` until it is merged upstream.
+This needs a small patch to ESPHome's `epaper_spi` component (seeding the update counter from the reset reason, `set_update_count()`, and skipping the panel's own deep sleep on ESP32 shutdowns in partial mode so the previous-image RAM survives), vendored in `external_components/` until it is merged upstream.
 
 ## Configuration
 

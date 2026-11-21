@@ -48,8 +48,10 @@ esphome:
 
 # Shadows the built-in epaper_spi with the local fork that adds
 # set_update_count() and seeds the counter from the reset reason, so a
-# deep-sleep wake can start with a partial refresh. Remove this block and
-# external_components/ once the change is upstreamed.
+# deep-sleep wake can start with a partial refresh, and keeps the panel out
+# of its own deep sleep across ESP32 shutdowns in partial mode so the
+# previous-image RAM survives. Remove this block and external_components/
+# once the changes are upstreamed.
 external_components:
   - source:
       type: local
