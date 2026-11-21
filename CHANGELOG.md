@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.3] - 2026-11-21
+
+Syncs the vendored e-paper driver with the upstream ESPHome 2026.11 rework and keeps partial refreshes clean on battery displays.
+
+### Fixes
+
+- Skip the panel's own deep sleep on ESP32 shutdowns in partial mode, so the previous-image RAM that partial refreshes compare against survives every deep-sleep cycle. The upstream 2026.11 shutdown hook sleeps the panel unconditionally, which smeared partial refreshes until the next hourly full refresh.
+
+### Dependencies
+
+- Rebase the vendored `epaper_spi` driver onto the upstream 2026.11 rework (EPaperUltraChip base, per-model partial handling, frame-hash skip), keeping the fork's update-count seeding and `set_update_count()`.
+
+### Documentation & Links
+
+- [README](https://github.com/fabianwimberger/reterminal-e1001-weather#readme)
+- [Full changelog](https://github.com/fabianwimberger/reterminal-e1001-weather/compare/v1.0.2...v1.0.3)
+
 ## [v1.0.2] - 2026-11-18
 
 Restores firmware builds for the reTerminal E1001 weather display on ESPHome 2026.11.
